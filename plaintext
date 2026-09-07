@@ -1,9 +1,0 @@
-tendon-readapt-app/
-├── index.html
-├── css/
-│   └── styles.css
-├── js/
-│   ├── app.js
-│   └── matrix-algorithm.js
-└── data/
-    └── achilles-exercises.json
