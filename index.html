@@ -19,14 +19,13 @@
         button.btn-sec { background-color: #95a5a6; }
         button.btn-danger { background-color: #e74c3c; margin-top: 10px; font-size: 0.8rem; padding: 6px; }
         #result { margin-top: 20px; padding: 20px; border-radius: 8px; display: none; }
-        .VERDE { background-color: #d4edda; color: #155724; border: 2px solid #c3e6cb; }
-        .NARANJA { background-color: #fff3cd; color: #856404; border: 2px solid #ffeeba; }
-        .ROJO { background-color: #f8d7da; color: #721c24; border: 2px solid #f5c6cb; }
         .exercise-card { background: #ffffff; border-radius: 6px; padding: 12px; margin-top: 10px; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .history-section { margin-top: 30px; border-top: 2px dashed #ccc; padding-top: 15px; }
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 10px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
         th { background-color: #f2f2f2; }
+        .warning-box { background: #fdf2e9; border-left: 4px solid #e67e22; padding: 10px; font-size: 0.85rem; margin-top: 10px; border-radius: 4px; }
+        .badge-info { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -78,7 +77,7 @@
 
         <!-- PASO 3: SÍNTOMAS -->
         <div class="step" id="step2">
-            <h2>Paso 3: Síntomas en el Tendón</h2>
+            <h2>Paso 3: Síntomas y Control 24h</h2>
             <div class="form-group">
                 <label>Dolor EVA durante el ejercicio de ayer (0-10):</label>
                 <input type="number" id="eva" min="0" max="10" value="0" required>
@@ -86,7 +85,7 @@
             <div class="form-group">
                 <label>Rigidez / Dolor matutino a las 24h (0: Nulo - 10: Máximo):</label>
                 <input type="number" id="stiffness24h" min="0" max="10" value="0" required>
-                <small style="color: #666;">Valores > 3 indican reactividad y requieren mantener o reducir carga.</small>
+                <small style="color: #666;">Valores > 3 indican reactividad post-estímulo.</small>
             </div>
             <div class="form-group">
                 <label>¿Puedes caminar sin dolor (AVD)?</label>
@@ -101,11 +100,18 @@
             </div>
         </div>
 
-        <!-- PASO 4: HISTORIAL DE CARGA -->
+        <!-- PASO 4: HISTORIAL Y SECUENCIA DE CARGA -->
         <div class="step" id="step3">
-            <h2>Paso 4: Historial de Carga</h2>
+            <h2>Paso 4: Secuencia de Carga Previa</h2>
             <div class="form-group">
-                <label>Días consecutivos en alta carga (Naranja/Rojo):</label>
+                <label>¿Ayer realizaste sesión de alta carga (ROJO: HSR / Pogos / Isom. Push/Catch)?</label>
+                <select id="yesterdayHighLoad">
+                    <option value="false">No</option>
+                    <option value="true">Sí</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Días consecutivos en alta carga previa:</label>
                 <input type="number" id="consecutiveHighLoadDays" min="0" max="7" value="0">
             </div>
             <div class="btn-group">
@@ -115,14 +121,15 @@
         </div>
     </form>
 
-    <!-- RESULTADO SIMPLIFICADO -->
+    <!-- RESULTADO -->
     <div id="result">
         <div id="statusBadge" style="font-size: 1.4rem; font-weight: 800; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px;"></div>
+        <div id="ruleNote"></div>
         <div id="exerciseSection"></div>
         <button type="button" class="btn-sec" style="margin-top:15px; width: 100%;" onclick="location.reload()">Nuevo Cuestionario</button>
     </div>
 
-    <!-- MÓDULO DE HISTÓRICO Y PROGRESIÓN -->
+    <!-- HISTÓRICO -->
     <div class="history-section">
         <h2>Evolución Individual</h2>
         <div id="historyTableContainer">
@@ -132,7 +139,6 @@
     </div>
 </div>
 
-<script src="js/matrix-algorithm.js"></script>
 <script>
     document.addEventListener("DOMContentLoaded", renderHistory);
 
@@ -143,6 +149,7 @@
 
     async function submitAssessment() {
         const tendonType = document.getElementById('tendonType').value;
+        const yesterdayHighLoad = document.getElementById('yesterdayHighLoad').value === 'true';
 
         const irsTotal = 
             parseInt(document.getElementById('irs_sleep').value) +
@@ -155,15 +162,25 @@
             stiffness24h: parseInt(document.getElementById('stiffness24h').value),
             canWalkWithoutPain: document.getElementById('canWalk').value === 'true',
             consecutiveHighLoadDays: parseInt(document.getElementById('consecutiveHighLoadDays').value),
+            yesterdayHighLoad: yesterdayHighLoad,
             irsTotal: irsTotal
         };
 
-        // CÁLCULO DEL ESTADO DIARIO
         let dailyState = 'VERDE';
+        let ruleNoteText = '';
+
         if (formData.eva > 5 || !formData.canWalkWithoutPain) {
             dailyState = 'ROJO';
-        } else if (formData.stiffness24h > 3 || formData.eva > 3 || formData.irsTotal < 14 || formData.consecutiveHighLoadDays >= 2) {
+            ruleNoteText = 'Symptom flare / Incapacidad funcional. Exclusivo Isométrico Largo Analgésico (AZUL).';
+        } else if (formData.yesterdayHighLoad && formData.stiffness24h > 3) {
+            dailyState = 'ROJO';
+            ruleNoteText = '⚠️ Molestia post-estímulo >3/10. Regresión a Isométricos Analgésicos Largos (AZUL).';
+        } else if (formData.yesterdayHighLoad) {
             dailyState = 'NARANJA';
+            ruleNoteText = 'ℹ️ Carga ROJA realizada ayer. Hoy corresponde Mantenimiento/Isométricos Largos + Carrera (Regla: No 2 días seguidos de Carga ROJA).';
+        } else if (formData.stiffness24h > 3 || formData.eva > 3 || formData.irsTotal < 14) {
+            dailyState = 'NARANJA';
+            ruleNoteText = 'Rigidez o fatiga sistémica elevada. Adaptación de carga a categoría NARANJA/VERDE/AZUL.';
         }
 
         saveRecord({
@@ -179,7 +196,6 @@
         const resultDiv = document.getElementById('result');
         resultDiv.style.display = 'block';
 
-        // FEEDBACK SIMPLIFICADO DEL ESTADO DIARIO
         const badgeMap = {
             'VERDE': { text: 'Estado diario: VERDE (Progresamos)', hex: '#155724', bg: '#d4edda', border: '#c3e6cb' },
             'NARANJA': { text: 'Estado diario: NARANJA (Mantenemos)', hex: '#856404', bg: '#fff3cd', border: '#ffeeba' },
@@ -193,7 +209,10 @@
         badgeDiv.style.backgroundColor = currentBadge.bg;
         badgeDiv.style.border = `2px solid ${currentBadge.border}`;
 
-        // CONTENEDOR DE EJERCICIOS
+        if (ruleNoteText) {
+            document.getElementById('ruleNote').innerHTML = `<div class="warning-box">${ruleNoteText}</div>`;
+        }
+
         const exerciseSection = document.getElementById('exerciseSection');
         exerciseSection.innerHTML = `
             <h3 style="margin-bottom: 10px;">Ejercicios recomendados para hoy:</h3>
@@ -218,19 +237,15 @@
                 const data = await response.json();
                 exerciseContainer.innerHTML = '';
 
-                // LÓGICA DE FILTRADO SEGÚN REGLAS DE COLOR
                 data.exercises.forEach(ex => {
                     let show = false;
                     const cat = ex.loadCategory.toUpperCase();
 
                     if (dailyState === 'VERDE') {
-                        // Verde: Rojos, Naranjas, Verdes y Azules
                         if (['ROJO', 'NARANJA', 'VERDE', 'AZUL'].includes(cat)) show = true;
                     } else if (dailyState === 'NARANJA') {
-                        // Naranja: Naranja, Verde y Azul
                         if (['NARANJA', 'VERDE', 'AZUL'].includes(cat)) show = true;
                     } else if (dailyState === 'ROJO') {
-                        // Rojo: Solo Verde y Azul
                         if (['VERDE', 'AZUL'].includes(cat)) show = true;
                     }
 
