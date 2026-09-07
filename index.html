@@ -1,111 +1,4 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tendón Readapt App</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; padding: 20px; background-color: #f4f7f6; color: #333; }
-        .container { max-width: 480px; margin: 0 auto; background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-        h1 { font-size: 1.4rem; color: #2c3e50; text-align: center; margin-bottom: 20px; }
-        h2 { font-size: 1.1rem; color: #34495e; border-bottom: 2px solid #ecf0f1; padding-bottom: 8px; }
-        .step { display: none; }
-        .step.active { display: block; }
-        .form-group { margin-bottom: 18px; }
-        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 0.9rem; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 1rem; }
-        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
-        button { flex: 1; padding: 12px; background-color: #3498db; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; }
-        button.btn-sec { background-color: #95a5a6; }
-        #result { margin-top: 20px; padding: 20px; border-radius: 8px; display: none; }
-        .VERDE { background-color: #d4edda; color: #155724; border: 2px solid #c3e6cb; }
-        .NARANJA { background-color: #fff3cd; color: #856404; border: 2px solid #ffeeba; }
-        .ROJO { background-color: #f8d7da; color: #721c24; border: 2px solid #f5c6cb; }
-        .exercise-card { background: #ffffff; border-radius: 6px; padding: 12px; margin-top: 10px; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h1>Readaptación de Tendón</h1>
-
-    <form id="tendonForm">
-        <!-- PANTALLA 1: IRS -->
-        <div class="step active" id="step1">
-            <h2>Paso 1: Recuperación y Bienestar (IRS)</h2>
-            <div class="form-group">
-                <label>Calidad del Sueño (1: Muy mala - 7: Excelente):</label>
-                <input type="number" id="irs_sleep" min="1" max="7" value="5" required>
-            </div>
-            <div class="form-group">
-                <label>Fatiga Muscular (1: Muy fatigado - 7: Fresco):</label>
-                <input type="number" id="irs_fatigue" min="1" max="7" value="5" required>
-            </div>
-            <div class="form-group">
-                <label>Nivel de Estrés (1: Muy alto - 7: Sin estrés):</label>
-                <input type="number" id="irs_stress" min="1" max="7" value="5" required>
-            </div>
-            <div class="form-group">
-                <label>Estado de Ánimo (1: Muy bajo - 7: Excelente):</label>
-                <input type="number" id="irs_mood" min="1" max="7" value="5" required>
-            </div>
-            <div class="btn-group">
-                <button type="button" onclick="nextStep(2)">Siguiente</button>
-            </div>
-        </div>
-
-        <!-- PANTALLA 2: SÍNTOMAS -->
-        <div class="step" id="step2">
-            <h2>Paso 2: Síntomas en el Tendón</h2>
-            <div class="form-group">
-                <label>Dolor EVA durante el ejercicio de ayer (0-10):</label>
-                <input type="number" id="eva" min="0" max="10" value="0" required>
-            </div>
-            <div class="form-group">
-                <label>Respuesta a las 24h (Rigidez/Dolor esta mañana):</label>
-                <select id="stiffness24h">
-                    <option value="mejor">Mejor o Igual</option>
-                    <option value="peor">Peor</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>¿Puedes caminar sin dolor (AVD)?</label>
-                <select id="canWalk">
-                    <option value="true">Sí</option>
-                    <option value="false">No</option>
-                </select>
-            </div>
-            <div class="btn-group">
-                <button type="button" class="btn-sec" onclick="nextStep(1)">Anterior</button>
-                <button type="button" onclick="nextStep(3)">Siguiente</button>
-            </div>
-        </div>
-
-        <!-- PANTALLA 3: HISTORIAL -->
-        <div class="step" id="step3">
-            <h2>Paso 3: Historial de Carga</h2>
-            <div class="form-group">
-                <label>Días consecutivos realizando carga alta (Naranja/Rojo):</label>
-                <input type="number" id="consecutiveHighLoadDays" min="0" max="7" value="0">
-            </div>
-            <div class="btn-group">
-                <button type="button" class="btn-sec" onclick="nextStep(2)">Anterior</button>
-                <button type="button" onclick="submitAssessment()">Calcular Semáforo</button>
-            </div>
-        </div>
-    </form>
-
-    <!-- PANTALLA FINAL: RESULTADO -->
-    <div id="result">
-        <h2 id="statusTitle" style="margin-top:0;"></h2>
-        <p id="statusReasons"></p>
-        <hr>
-        <h3>Ejercicios Recomendados para Hoy:</h3>
-        <div id="exerciseList"></div>
-    </div>
-</div>
-
-<!-- LÓGICA DE JAVASCRIPT DIRECTA EN EL ARCHIVO -->
+<!-- REEMPLAZAR DESDE <script src="js/matrix-algorithm.js"> HASTA EL FINAL -->
 <script src="js/matrix-algorithm.js"></script>
 <script>
     function nextStep(stepNumber) {
@@ -114,14 +7,12 @@
     }
 
     async function submitAssessment() {
-        // 1. Calcular IRS
         const irsTotal = 
             parseInt(document.getElementById('irs_sleep').value) +
             parseInt(document.getElementById('irs_fatigue').value) +
             parseInt(document.getElementById('irs_stress').value) +
             parseInt(document.getElementById('irs_mood').value);
 
-        // 2. Agrupar datos
         const formData = {
             eva: parseInt(document.getElementById('eva').value),
             stiffness24h: document.getElementById('stiffness24h').value,
@@ -130,10 +21,17 @@
             irsTotal: irsTotal
         };
 
-        // 3. Evaluar con la matriz del archivo matrix-algorithm.js
-        const result = processAssessment(formData);
+        // Verificación de seguridad por si no carga la función del algoritmo
+        let result;
+        if (typeof processAssessment === 'function') {
+            result = processAssessment(formData);
+        } else {
+            // Lógica de respaldo si el script JS externo falla
+            let state = (formData.eva > 3 || !formData.canWalkWithoutPain) ? 'ROJO' : 
+                        (formData.stiffness24h === 'peor' || formData.eva === 3 || formData.irsTotal < 14) ? 'NARANJA' : 'VERDE';
+            result = { dailyState: state, reasons: ['Cálculo directo aplicado.'] };
+        }
 
-        // 4. Ocultar cuestionario y mostrar resultado
         document.getElementById('tendonForm').style.display = 'none';
         const resultDiv = document.getElementById('result');
         resultDiv.className = result.dailyState;
@@ -143,17 +41,17 @@
         document.getElementById('statusReasons').innerHTML = '<strong>Puntuación IRS:</strong> ' + irsTotal + '/28<br>' + 
             (result.reasons.length > 0 ? '<strong>Motivos:</strong> ' + result.reasons.join(' ') : 'Parámetros óptimos.');
 
-        // 5. PETICIÓN FETCH: Leer el archivo JSON de ejercicios
+        // PETICIÓN FETCH DE EJERCICIOS CON MANEJO DE ERRORES VISUAL
+        const exerciseContainer = document.getElementById('exerciseList');
         try {
             const response = await fetch('data/achilles-exercises.json');
+            if (!response.ok) throw new Error('No se pudo encontrar data/achilles-exercises.json');
+            
             const data = await response.json();
-            const exerciseContainer = document.getElementById('exerciseList');
             exerciseContainer.innerHTML = '';
 
             data.exercises.forEach(ex => {
                 let show = false;
-                
-                // Reglas de filtrado
                 if (result.dailyState === 'VERDE') show = true;
                 if (result.dailyState === 'NARANJA' && (ex.loadCategory === 'AZUL' || ex.loadCategory === 'NARANJA')) show = true;
                 if (result.dailyState === 'ROJO' && ex.loadCategory === 'AZUL') show = true;
@@ -169,10 +67,9 @@
                 }
             });
         } catch (error) {
-            console.error('Error cargando ejercicios:', error);
+            exerciseContainer.innerHTML = `<p style="color:red; font-size:0.9rem;">⚠️ <strong>Error al cargar ejercicios:</strong> ${error.message}</p>`;
         }
     }
 </script>
-
 </body>
 </html>
