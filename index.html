@@ -80,15 +80,13 @@
         <div class="step" id="step2">
             <h2>Paso 3: Síntomas en el Tendón</h2>
             <div class="form-group">
-                <label>Dolor EVA durante ejercicio previo (0-10):</label>
+                <label>Dolor EVA durante el ejercicio de ayer (0-10):</label>
                 <input type="number" id="eva" min="0" max="10" value="0" required>
             </div>
             <div class="form-group">
-                <label>Respuesta 24h (Rigidez/Dolor hoy):</label>
-                <select id="stiffness24h">
-                    <option value="mejor">Mejor o Igual</option>
-                    <option value="peor">Peor</option>
-                </select>
+                <label>Rigidez / Dolor matutino a las 24h (0: Nulo - 10: Máximo):</label>
+                <input type="number" id="stiffness24h" min="0" max="10" value="0" required>
+                <small style="color: #666;">Valores > 3 indican reactividad y requieren mantener o reducir carga.</small>
             </div>
             <div class="form-group">
                 <label>¿Puedes caminar sin dolor (AVD)?</label>
@@ -122,10 +120,7 @@
         <h2 id="statusTitle" style="margin-top:0;"></h2>
         <p id="statusReasons"></p>
         <hr>
-        <div id="exerciseSection">
-            <h3>Ejercicios Recomendados para Hoy:</h3>
-            <div id="exerciseList"></div>
-        </div>
+        <div id="exerciseSection"></div>
         <button type="button" class="btn-sec" style="margin-top:15px;" onclick="location.reload()">Nuevo Cuestionario</button>
     </div>
 
@@ -159,19 +154,32 @@
 
         const formData = {
             eva: parseInt(document.getElementById('eva').value),
-            stiffness24h: document.getElementById('stiffness24h').value,
+            stiffness24h: parseInt(document.getElementById('stiffness24h').value),
             canWalkWithoutPain: document.getElementById('canWalk').value === 'true',
             consecutiveHighLoadDays: parseInt(document.getElementById('consecutiveHighLoadDays').value),
             irsTotal: irsTotal
         };
 
+        // LÓGICA DE DECISIÓN CON CRITERIO CUANTITATIVO EN RIGIDEZ 24H
         let result;
         if (typeof processAssessment === 'function') {
             result = processAssessment(formData);
         } else {
-            let state = (formData.eva > 3 || !formData.canWalkWithoutPain) ? 'ROJO' : 
-                        (formData.stiffness24h === 'peor' || formData.eva === 3 || formData.irsTotal < 14) ? 'NARANJA' : 'VERDE';
-            result = { dailyState: state, reasons: ['Cálculo directo aplicado.'] };
+            let reasons = [];
+            let state = 'VERDE';
+
+            if (formData.eva > 5 || !formData.canWalkWithoutPain) {
+                state = 'ROJO';
+                reasons.push('Dolor alto durante ejercicio o incapacidad para caminar sin dolor.');
+            } else if (formData.stiffness24h > 3 || formData.eva > 3 || formData.irsTotal < 14 || formData.consecutiveHighLoadDays >= 2) {
+                state = 'NARANJA';
+                if (formData.stiffness24h > 3) reasons.push(`Rigidez/Dolor matutino elevado (${formData.stiffness24h}/10 > 3). Regresión/mantenimiento de carga.`);
+                if (formData.eva > 3) reasons.push(`Dolor en ejercicio previo elevado (${formData.eva}/10 > 3).`);
+                if (formData.irsTotal < 14) reasons.push(`Puntuación IRS baja (${formData.irsTotal}/28). Estado sistémico no óptimo.`);
+                if (formData.consecutiveHighLoadDays >= 2) reasons.push('Múltiples días consecutivos en alta carga.');
+            }
+
+            result = { dailyState: state, reasons: reasons };
         }
 
         saveRecord({
@@ -179,6 +187,7 @@
             tendon: tendonType,
             state: result.dailyState,
             eva: formData.eva,
+            stiffness: formData.stiffness24h,
             irs: irsTotal
         });
 
@@ -190,6 +199,24 @@
         document.getElementById('statusTitle').innerText = 'Estado Diario: ' + result.dailyState;
         document.getElementById('statusReasons').innerHTML = '<strong>Puntuación IRS:</strong> ' + irsTotal + '/28<br>' + 
             (result.reasons.length > 0 ? '<strong>Motivos:</strong> ' + result.reasons.join(' ') : 'Parámetros óptimos.');
+
+        // ENCABEZADO CON COLOR DESTACADO EN GRANDE
+        const exerciseSection = document.getElementById('exerciseSection');
+        const colorMap = {
+            'VERDE': { text: 'VERDE (Carga Alta / Progresión)', hex: '#155724', bg: '#d4edda' },
+            'NARANJA': { text: 'NARANJA (Mantenimiento / Carga Adaptada)', hex: '#856404', bg: '#fff3cd' },
+            'ROJO': { text: 'ROJO (Regresión / Carga Baja o Isometría)', hex: '#721c24', bg: '#f8d7da' }
+        };
+
+        const targetColor = colorMap[result.dailyState] || { text: result.dailyState, hex: '#333', bg: '#eee' };
+
+        exerciseSection.innerHTML = `
+            <h3 style="margin-bottom: 8px;">Ejercicios recomendados para hoy:</h3>
+            <div style="font-size: 1.3rem; font-weight: 800; color: ${targetColor.hex}; background-color: ${targetColor.bg}; margin-bottom: 15px; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid ${targetColor.hex};">
+                ${targetColor.text}
+            </div>
+            <div id="exerciseList"></div>
+        `;
 
         const exerciseContainer = document.getElementById('exerciseList');
 
@@ -255,13 +282,14 @@
             'proximal_hamstring': 'Isquio Prox.'
         };
 
-        let html = '<table><thead><tr><th>Fecha</th><th>Tendón</th><th>Estado</th><th>EVA</th><th>IRS</th></tr></thead><tbody>';
+        let html = '<table><thead><tr><th>Fecha</th><th>Tendón</th><th>Estado</th><th>EVA Ejerc.</th><th>Rigidez 24h</th><th>IRS</th></tr></thead><tbody>';
         history.forEach(item => {
             html += `<tr>
                 <td>${item.date}</td>
                 <td>${tendonLabels[item.tendon] || item.tendon}</td>
                 <td style="font-weight:bold; color:${item.state === 'VERDE' ? '#155724' : item.state === 'NARANJA' ? '#856404' : '#721c24'}">${item.state}</td>
                 <td>${item.eva}/10</td>
+                <td>${item.stiffness !== undefined ? item.stiffness : '-'}/10</td>
                 <td>${item.irs}/28</td>
             </tr>`;
         });
