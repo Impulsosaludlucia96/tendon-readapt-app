@@ -23,8 +23,6 @@
         .NARANJA { background-color: #fff3cd; color: #856404; border: 2px solid #ffeeba; }
         .ROJO { background-color: #f8d7da; color: #721c24; border: 2px solid #f5c6cb; }
         .exercise-card { background: #ffffff; border-radius: 6px; padding: 12px; margin-top: 10px; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        
-        /* TABLA DE HISTÓRICO */
         .history-section { margin-top: 30px; border-top: 2px dashed #ccc; padding-top: 15px; }
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 10px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
@@ -37,15 +35,15 @@
     <h1>Readaptación de Tendón</h1>
 
     <form id="tendonForm">
-        <!-- PASO 0: DIAGNÓSTICO -->
+        <!-- PASO 1: LOCALIZACIÓN -->
         <div class="step active" id="step0">
-            <h2>Paso 1: Localización</h2>
+            <h2>Paso 1: Localización y Patología</h2>
             <div class="form-group">
-                <label for="tendonType">Selecciona el tendón afecto:</label>
+                <label for="tendonType">Selecciona la estructura a evaluar:</label>
                 <select id="tendonType">
                     <option value="achilles">Tendón de Aquiles</option>
-                    <option value="patellar">Tendón Rotuliano (Próximamente)</option>
-                    <option value="gluteal">Tendón Glúteo Medio (Próximamente)</option>
+                    <option value="patellar">Tendón Rotuliano</option>
+                    <option value="proximal_hamstring">Isquiotibial Proximal</option>
                 </select>
             </div>
             <div class="btn-group">
@@ -53,9 +51,9 @@
             </div>
         </div>
 
-        <!-- PASO 1: IRS -->
+        <!-- PASO 2: IRS -->
         <div class="step" id="step1">
-            <h2>Paso 2: Recuperación (IRS)</h2>
+            <h2>Paso 2: Recuperación y Bienestar (IRS)</h2>
             <div class="form-group">
                 <label>Calidad del Sueño (1: Mala - 7: Excelente):</label>
                 <input type="number" id="irs_sleep" min="1" max="7" value="5" required>
@@ -78,7 +76,7 @@
             </div>
         </div>
 
-        <!-- PASO 2: SÍNTOMAS -->
+        <!-- PASO 3: SÍNTOMAS -->
         <div class="step" id="step2">
             <h2>Paso 3: Síntomas en el Tendón</h2>
             <div class="form-group">
@@ -105,7 +103,7 @@
             </div>
         </div>
 
-        <!-- PASO 3: CARGA -->
+        <!-- PASO 4: HISTORIAL DE CARGA -->
         <div class="step" id="step3">
             <h2>Paso 4: Historial de Carga</h2>
             <div class="form-group">
@@ -176,9 +174,9 @@
             result = { dailyState: state, reasons: ['Cálculo directo aplicado.'] };
         }
 
-        // GUARDAR REGISTRO EN LOCALSTORAGE
         saveRecord({
             date: new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }),
+            tendon: tendonType,
             state: result.dailyState,
             eva: formData.eva,
             irs: irsTotal
@@ -195,10 +193,18 @@
 
         const exerciseContainer = document.getElementById('exerciseList');
 
-        if (tendonType === 'achilles') {
+        const jsonFiles = {
+            'achilles': 'data/achilles-exercises.json',
+            'patellar': 'data/patellar-exercises.json',
+            'proximal_hamstring': 'data/hamstring-exercises.json'
+        };
+
+        const selectedFile = jsonFiles[tendonType];
+
+        if (selectedFile) {
             try {
-                const response = await fetch('data/achilles-exercises.json');
-                if (!response.ok) throw new Error('Archivo JSON no disponible');
+                const response = await fetch(selectedFile);
+                if (!response.ok) throw new Error(`Archivo no encontrado (${selectedFile})`);
                 
                 const data = await response.json();
                 exerciseContainer.innerHTML = '';
@@ -220,20 +226,17 @@
                     }
                 });
             } catch (error) {
-                exerciseContainer.innerHTML = `<p style="color:red; font-size:0.9rem;">⚠️ Error al cargar ejercicios: ${error.message}</p>`;
+                exerciseContainer.innerHTML = `<p style="color:#d35400; font-size:0.9rem;">⚠️ Base de datos en desarrollo: ${error.message}</p>`;
             }
-        } else {
-            exerciseContainer.innerHTML = '<p><em>Protocolo en fase de validación clínica.</em></p>';
         }
 
         renderHistory();
     }
 
-    // FUNCIONES DE HISTÓRICO
     function saveRecord(record) {
         let history = JSON.parse(localStorage.getItem('tendon_history')) || [];
-        history.unshift(record); // Añade el más reciente arriba
-        if (history.length > 14) history.pop(); // Guarda los últimos 14 días
+        history.unshift(record);
+        if (history.length > 14) history.pop();
         localStorage.setItem('tendon_history', JSON.stringify(history));
     }
 
@@ -246,10 +249,17 @@
             return;
         }
 
-        let html = '<table><thead><tr><th>Fecha</th><th>Estado</th><th>EVA</th><th>IRS</th></tr></thead><tbody>';
+        const tendonLabels = {
+            'achilles': 'Aquiles',
+            'patellar': 'Rotuliano',
+            'proximal_hamstring': 'Isquio Prox.'
+        };
+
+        let html = '<table><thead><tr><th>Fecha</th><th>Tendón</th><th>Estado</th><th>EVA</th><th>IRS</th></tr></thead><tbody>';
         history.forEach(item => {
             html += `<tr>
                 <td>${item.date}</td>
+                <td>${tendonLabels[item.tendon] || item.tendon}</td>
                 <td style="font-weight:bold; color:${item.state === 'VERDE' ? '#155724' : item.state === 'NARANJA' ? '#856404' : '#721c24'}">${item.state}</td>
                 <td>${item.eva}/10</td>
                 <td>${item.irs}/28</td>
@@ -260,7 +270,7 @@
     }
 
     function clearHistory() {
-        if (confirm("¿Quieres borrar el historial de este dispositivo?")) {
+        if (confirm("¿Quieres borrar el historial registrado en este dispositivo?")) {
             localStorage.removeItem('tendon_history');
             renderHistory();
         }
