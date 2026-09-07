@@ -115,13 +115,11 @@
         </div>
     </form>
 
-    <!-- RESULTADO -->
+    <!-- RESULTADO SIMPLIFICADO -->
     <div id="result">
-        <h2 id="statusTitle" style="margin-top:0;"></h2>
-        <p id="statusReasons"></p>
-        <hr>
+        <div id="statusBadge" style="font-size: 1.4rem; font-weight: 800; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 15px;"></div>
         <div id="exerciseSection"></div>
-        <button type="button" class="btn-sec" style="margin-top:15px;" onclick="location.reload()">Nuevo Cuestionario</button>
+        <button type="button" class="btn-sec" style="margin-top:15px; width: 100%;" onclick="location.reload()">Nuevo Cuestionario</button>
     </div>
 
     <!-- MÓDULO DE HISTÓRICO Y PROGRESIÓN -->
@@ -160,32 +158,18 @@
             irsTotal: irsTotal
         };
 
-        // LÓGICA DE DECISIÓN CON CRITERIO CUANTITATIVO EN RIGIDEZ 24H
-        let result;
-        if (typeof processAssessment === 'function') {
-            result = processAssessment(formData);
-        } else {
-            let reasons = [];
-            let state = 'VERDE';
-
-            if (formData.eva > 5 || !formData.canWalkWithoutPain) {
-                state = 'ROJO';
-                reasons.push('Dolor alto durante ejercicio o incapacidad para caminar sin dolor.');
-            } else if (formData.stiffness24h > 3 || formData.eva > 3 || formData.irsTotal < 14 || formData.consecutiveHighLoadDays >= 2) {
-                state = 'NARANJA';
-                if (formData.stiffness24h > 3) reasons.push(`Rigidez/Dolor matutino elevado (${formData.stiffness24h}/10 > 3). Regresión/mantenimiento de carga.`);
-                if (formData.eva > 3) reasons.push(`Dolor en ejercicio previo elevado (${formData.eva}/10 > 3).`);
-                if (formData.irsTotal < 14) reasons.push(`Puntuación IRS baja (${formData.irsTotal}/28). Estado sistémico no óptimo.`);
-                if (formData.consecutiveHighLoadDays >= 2) reasons.push('Múltiples días consecutivos en alta carga.');
-            }
-
-            result = { dailyState: state, reasons: reasons };
+        // CÁLCULO DEL ESTADO DIARIO
+        let dailyState = 'VERDE';
+        if (formData.eva > 5 || !formData.canWalkWithoutPain) {
+            dailyState = 'ROJO';
+        } else if (formData.stiffness24h > 3 || formData.eva > 3 || formData.irsTotal < 14 || formData.consecutiveHighLoadDays >= 2) {
+            dailyState = 'NARANJA';
         }
 
         saveRecord({
             date: new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }),
             tendon: tendonType,
-            state: result.dailyState,
+            state: dailyState,
             eva: formData.eva,
             stiffness: formData.stiffness24h,
             irs: irsTotal
@@ -193,28 +177,26 @@
 
         document.getElementById('tendonForm').style.display = 'none';
         const resultDiv = document.getElementById('result');
-        resultDiv.className = result.dailyState;
         resultDiv.style.display = 'block';
 
-        document.getElementById('statusTitle').innerText = 'Estado Diario: ' + result.dailyState;
-        document.getElementById('statusReasons').innerHTML = '<strong>Puntuación IRS:</strong> ' + irsTotal + '/28<br>' + 
-            (result.reasons.length > 0 ? '<strong>Motivos:</strong> ' + result.reasons.join(' ') : 'Parámetros óptimos.');
-
-        // ENCABEZADO CON COLOR DESTACADO EN GRANDE
-        const exerciseSection = document.getElementById('exerciseSection');
-        const colorMap = {
-            'VERDE': { text: 'VERDE (Carga Alta / Progresión)', hex: '#155724', bg: '#d4edda' },
-            'NARANJA': { text: 'NARANJA (Mantenimiento / Carga Adaptada)', hex: '#856404', bg: '#fff3cd' },
-            'ROJO': { text: 'ROJO (Regresión / Carga Baja o Isometría)', hex: '#721c24', bg: '#f8d7da' }
+        // FEEDBACK SIMPLIFICADO DEL ESTADO DIARIO
+        const badgeMap = {
+            'VERDE': { text: 'Estado diario: VERDE (Progresamos)', hex: '#155724', bg: '#d4edda', border: '#c3e6cb' },
+            'NARANJA': { text: 'Estado diario: NARANJA (Mantenemos)', hex: '#856404', bg: '#fff3cd', border: '#ffeeba' },
+            'ROJO': { text: 'Estado diario: ROJO (Frenamos)', hex: '#721c24', bg: '#f8d7da', border: '#f5c6cb' }
         };
 
-        const targetColor = colorMap[result.dailyState] || { text: result.dailyState, hex: '#333', bg: '#eee' };
+        const currentBadge = badgeMap[dailyState];
+        const badgeDiv = document.getElementById('statusBadge');
+        badgeDiv.innerText = currentBadge.text;
+        badgeDiv.style.color = currentBadge.hex;
+        badgeDiv.style.backgroundColor = currentBadge.bg;
+        badgeDiv.style.border = `2px solid ${currentBadge.border}`;
 
+        // CONTENEDOR DE EJERCICIOS
+        const exerciseSection = document.getElementById('exerciseSection');
         exerciseSection.innerHTML = `
-            <h3 style="margin-bottom: 8px;">Ejercicios recomendados para hoy:</h3>
-            <div style="font-size: 1.3rem; font-weight: 800; color: ${targetColor.hex}; background-color: ${targetColor.bg}; margin-bottom: 15px; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid ${targetColor.hex};">
-                ${targetColor.text}
-            </div>
+            <h3 style="margin-bottom: 10px;">Ejercicios recomendados para hoy:</h3>
             <div id="exerciseList"></div>
         `;
 
@@ -236,11 +218,21 @@
                 const data = await response.json();
                 exerciseContainer.innerHTML = '';
 
+                // LÓGICA DE FILTRADO SEGÚN REGLAS DE COLOR
                 data.exercises.forEach(ex => {
                     let show = false;
-                    if (result.dailyState === 'VERDE') show = true;
-                    if (result.dailyState === 'NARANJA' && (ex.loadCategory === 'AZUL' || ex.loadCategory === 'NARANJA')) show = true;
-                    if (result.dailyState === 'ROJO' && ex.loadCategory === 'AZUL') show = true;
+                    const cat = ex.loadCategory.toUpperCase();
+
+                    if (dailyState === 'VERDE') {
+                        // Verde: Rojos, Naranjas, Verdes y Azules
+                        if (['ROJO', 'NARANJA', 'VERDE', 'AZUL'].includes(cat)) show = true;
+                    } else if (dailyState === 'NARANJA') {
+                        // Naranja: Naranja, Verde y Azul
+                        if (['NARANJA', 'VERDE', 'AZUL'].includes(cat)) show = true;
+                    } else if (dailyState === 'ROJO') {
+                        // Rojo: Solo Verde y Azul
+                        if (['VERDE', 'AZUL'].includes(cat)) show = true;
+                    }
 
                     if (show) {
                         const card = document.createElement('div');
