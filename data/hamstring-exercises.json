@@ -1,0 +1,53 @@
+{
+  "pathology": "Patellar Tendinopathy",
+  "exercises": [
+    {
+      "id": "pat_01",
+      "name": "Isométrico: Leg Extension sostenido a 60º de flexión de rodilla (5x45s)",
+      "loadCategory": "AZUL",
+      "bwRatio": "< 3 BW",
+      "phase": "Fase 1: Isometría (Analgesia)",
+      "compressionLevel": "Baja"
+    },
+    {
+      "id": "pat_02",
+      "name": "Isométrico: Spanish Squat sostén unilateral/bilateral",
+      "loadCategory": "AZUL",
+      "bwRatio": "< 3 BW",
+      "phase": "Fase 1: Isometría",
+      "compressionLevel": "Baja"
+    },
+    {
+      "id": "pat_03",
+      "name": "Isotónico pesados: Leg Extension o Prensa pesada a velocidad lenta (3s subida / 3s bajada)",
+      "loadCategory": "NARANJA",
+      "bwRatio": "3 - 5 BW",
+      "phase": "Fase 2: Fuerza Isotónica Heavy Slow Resistance (HSR)",
+      "compressionLevel": "Media"
+    },
+    {
+      "id": "pat_04",
+      "name": "Isotónico específico: Decline Squat (Sentadilla en tabla declinada) con peso",
+      "loadCategory": "NARANJA",
+      "bwRatio": "3 - 5 BW",
+      "phase": "Fase 2: Carga Excéntrica / Focalizada",
+      "compressionLevel": "Media/Alta"
+    },
+    {
+      "id": "pat_05",
+      "name": "Pliometría: Saltos verticales a la comba, Pogo Jumps y Landing Drills (Aterrizajes)",
+      "loadCategory": "ROJO",
+      "bwRatio": "> 5 BW",
+      "phase": "Fase 3: Almacenamiento de Energía (SSC)",
+      "compressionLevel": "Alta"
+    },
+    {
+      "id": "pat_06",
+      "name": "Readaptación al Deporte: Saltos con aceleración/frenada y reintroducción a la carrera/rebound",
+      "loadCategory": "ROJO",
+      "bwRatio": "> 5 BW",
+      "phase": "Fase 4: Vuelta a la Competición",
+      "compressionLevel": "Alta / Específica"
+    }
+  ]
+}
