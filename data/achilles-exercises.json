@@ -1,0 +1,47 @@
+{
+  "pathology": "Tendinopatía de Aquiles",
+  "exercises": [
+    {
+      "id": "ACH-001",
+      "name": "Seated heel raises (Elevación de talón sentado)",
+      "phase": 0,
+      "loadCategory": "AZUL",
+      "bwRatio": "0.8 - 1.2 BW"
+    },
+    {
+      "id": "ACH-002",
+      "name": "Standing heel raises 2-legs (Elevación de talón 2 piernas)",
+      "phase": 0,
+      "loadCategory": "AZUL",
+      "bwRatio": "1.5 - 2.0 BW"
+    },
+    {
+      "id": "ACH-003",
+      "name": "Standing heel raises 1-leg (Elevación de talón 1 pierna)",
+      "phase": 1,
+      "loadCategory": "NARANJA",
+      "bwRatio": "3.5 - 4.5 BW"
+    },
+    {
+      "id": "ACH-004",
+      "name": "Forward jump 2-legs / CMJ 2-legs (Saltos bipodales)",
+      "phase": 2,
+      "loadCategory": "NARANJA",
+      "bwRatio": "3.8 - 4.5 BW"
+    },
+    {
+      "id": "ACH-005",
+      "name": "Hopping 1-leg (Pogos unipodales)",
+      "phase": 2,
+      "loadCategory": "ROJO",
+      "bwRatio": "6.5 - 7.5 BW"
+    },
+    {
+      "id": "ACH-006",
+      "name": "Running (Carrera)",
+      "phase": 3,
+      "loadCategory": "ROJO",
+      "bwRatio": "5.5 - 7.8 BW"
+    }
+  ]
+}
