@@ -17,11 +17,18 @@
         .btn-group { display: flex; gap: 10px; margin-top: 20px; }
         button { flex: 1; padding: 12px; background-color: #3498db; color: white; border: none; border-radius: 6px; font-size: 1rem; font-weight: bold; cursor: pointer; }
         button.btn-sec { background-color: #95a5a6; }
+        button.btn-danger { background-color: #e74c3c; margin-top: 10px; font-size: 0.8rem; padding: 6px; }
         #result { margin-top: 20px; padding: 20px; border-radius: 8px; display: none; }
         .VERDE { background-color: #d4edda; color: #155724; border: 2px solid #c3e6cb; }
         .NARANJA { background-color: #fff3cd; color: #856404; border: 2px solid #ffeeba; }
         .ROJO { background-color: #f8d7da; color: #721c24; border: 2px solid #f5c6cb; }
         .exercise-card { background: #ffffff; border-radius: 6px; padding: 12px; margin-top: 10px; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        
+        /* TABLA DE HISTÓRICO */
+        .history-section { margin-top: 30px; border-top: 2px dashed #ccc; padding-top: 15px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #f2f2f2; }
     </style>
 </head>
 <body>
@@ -30,9 +37,9 @@
     <h1>Readaptación de Tendón</h1>
 
     <form id="tendonForm">
-        <!-- PASO 0: SELECCIÓN DE TENDINOPATÍA -->
+        <!-- PASO 0: DIAGNÓSTICO -->
         <div class="step active" id="step0">
-            <h2>Paso 1: Diagnóstico / Localización</h2>
+            <h2>Paso 1: Localización</h2>
             <div class="form-group">
                 <label for="tendonType">Selecciona el tendón afecto:</label>
                 <select id="tendonType">
@@ -48,21 +55,21 @@
 
         <!-- PASO 1: IRS -->
         <div class="step" id="step1">
-            <h2>Paso 2: Recuperación y Bienestar (IRS)</h2>
+            <h2>Paso 2: Recuperación (IRS)</h2>
             <div class="form-group">
-                <label>Calidad del Sueño (1: Muy mala - 7: Excelente):</label>
+                <label>Calidad del Sueño (1: Mala - 7: Excelente):</label>
                 <input type="number" id="irs_sleep" min="1" max="7" value="5" required>
             </div>
             <div class="form-group">
-                <label>Fatiga Muscular (1: Muy fatigado - 7: Fresco):</label>
+                <label>Fatiga Muscular (1: Alta - 7: Sin fatiga):</label>
                 <input type="number" id="irs_fatigue" min="1" max="7" value="5" required>
             </div>
             <div class="form-group">
-                <label>Nivel de Estrés (1: Muy alto - 7: Sin estrés):</label>
+                <label>Nivel de Estrés (1: Alto - 7: Sin estrés):</label>
                 <input type="number" id="irs_stress" min="1" max="7" value="5" required>
             </div>
             <div class="form-group">
-                <label>Estado de Ánimo (1: Muy bajo - 7: Excelente):</label>
+                <label>Estado de Ánimo (1: Bajo - 7: Excelente):</label>
                 <input type="number" id="irs_mood" min="1" max="7" value="5" required>
             </div>
             <div class="btn-group">
@@ -75,11 +82,11 @@
         <div class="step" id="step2">
             <h2>Paso 3: Síntomas en el Tendón</h2>
             <div class="form-group">
-                <label>Dolor EVA durante el ejercicio de ayer (0-10):</label>
+                <label>Dolor EVA durante ejercicio previo (0-10):</label>
                 <input type="number" id="eva" min="0" max="10" value="0" required>
             </div>
             <div class="form-group">
-                <label>Respuesta a las 24h (Rigidez/Dolor esta mañana):</label>
+                <label>Respuesta 24h (Rigidez/Dolor hoy):</label>
                 <select id="stiffness24h">
                     <option value="mejor">Mejor o Igual</option>
                     <option value="peor">Peor</option>
@@ -98,16 +105,16 @@
             </div>
         </div>
 
-        <!-- PASO 3: HISTORIAL -->
+        <!-- PASO 3: CARGA -->
         <div class="step" id="step3">
             <h2>Paso 4: Historial de Carga</h2>
             <div class="form-group">
-                <label>Días consecutivos realizando carga alta (Naranja/Rojo):</label>
+                <label>Días consecutivos en alta carga (Naranja/Rojo):</label>
                 <input type="number" id="consecutiveHighLoadDays" min="0" max="7" value="0">
             </div>
             <div class="btn-group">
                 <button type="button" class="btn-sec" onclick="nextStep(2)">Anterior</button>
-                <button type="button" onclick="submitAssessment()">Calcular Semáforo</button>
+                <button type="button" onclick="submitAssessment()">Calcular y Registrar</button>
             </div>
         </div>
     </form>
@@ -121,11 +128,23 @@
             <h3>Ejercicios Recomendados para Hoy:</h3>
             <div id="exerciseList"></div>
         </div>
+        <button type="button" class="btn-sec" style="margin-top:15px;" onclick="location.reload()">Nuevo Cuestionario</button>
+    </div>
+
+    <!-- MÓDULO DE HISTÓRICO Y PROGRESIÓN -->
+    <div class="history-section">
+        <h2>Evolución Individual</h2>
+        <div id="historyTableContainer">
+            <p style="font-size: 0.85rem; color: #666;">No hay registros guardados aún.</p>
+        </div>
+        <button type="button" class="btn-danger" onclick="clearHistory()">Borrar Histórico</button>
     </div>
 </div>
 
 <script src="js/matrix-algorithm.js"></script>
 <script>
+    document.addEventListener("DOMContentLoaded", renderHistory);
+
     function nextStep(stepNumber) {
         document.querySelectorAll('.step').forEach(step => step.classList.remove('active'));
         document.getElementById('step' + stepNumber).classList.add('active');
@@ -157,6 +176,14 @@
             result = { dailyState: state, reasons: ['Cálculo directo aplicado.'] };
         }
 
+        // GUARDAR REGISTRO EN LOCALSTORAGE
+        saveRecord({
+            date: new Date().toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }),
+            state: result.dailyState,
+            eva: formData.eva,
+            irs: irsTotal
+        });
+
         document.getElementById('tendonForm').style.display = 'none';
         const resultDiv = document.getElementById('result');
         resultDiv.className = result.dailyState;
@@ -168,11 +195,10 @@
 
         const exerciseContainer = document.getElementById('exerciseList');
 
-        // CONDICIONAL CLÍNICA: Solo cargar si es Aquiles
         if (tendonType === 'achilles') {
             try {
                 const response = await fetch('data/achilles-exercises.json');
-                if (!response.ok) throw new Error('No se pudo encontrar el archivo de ejercicios');
+                if (!response.ok) throw new Error('Archivo JSON no disponible');
                 
                 const data = await response.json();
                 exerciseContainer.innerHTML = '';
@@ -197,7 +223,46 @@
                 exerciseContainer.innerHTML = `<p style="color:red; font-size:0.9rem;">⚠️ Error al cargar ejercicios: ${error.message}</p>`;
             }
         } else {
-            exerciseContainer.innerHTML = '<p><em>El protocolo de ejercicios específicos para esta localización está actualmente en fase de validación clínica.</em></p>';
+            exerciseContainer.innerHTML = '<p><em>Protocolo en fase de validación clínica.</em></p>';
+        }
+
+        renderHistory();
+    }
+
+    // FUNCIONES DE HISTÓRICO
+    function saveRecord(record) {
+        let history = JSON.parse(localStorage.getItem('tendon_history')) || [];
+        history.unshift(record); // Añade el más reciente arriba
+        if (history.length > 14) history.pop(); // Guarda los últimos 14 días
+        localStorage.setItem('tendon_history', JSON.stringify(history));
+    }
+
+    function renderHistory() {
+        let history = JSON.parse(localStorage.getItem('tendon_history')) || [];
+        const container = document.getElementById('historyTableContainer');
+        
+        if (history.length === 0) {
+            container.innerHTML = '<p style="font-size: 0.85rem; color: #666;">No hay registros guardados aún.</p>';
+            return;
+        }
+
+        let html = '<table><thead><tr><th>Fecha</th><th>Estado</th><th>EVA</th><th>IRS</th></tr></thead><tbody>';
+        history.forEach(item => {
+            html += `<tr>
+                <td>${item.date}</td>
+                <td style="font-weight:bold; color:${item.state === 'VERDE' ? '#155724' : item.state === 'NARANJA' ? '#856404' : '#721c24'}">${item.state}</td>
+                <td>${item.eva}/10</td>
+                <td>${item.irs}/28</td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    function clearHistory() {
+        if (confirm("¿Quieres borrar el historial de este dispositivo?")) {
+            localStorage.removeItem('tendon_history');
+            renderHistory();
         }
     }
 </script>
