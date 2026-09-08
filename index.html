@@ -25,7 +25,6 @@
         th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
         th { background-color: #f2f2f2; }
         .warning-box { background: #fdf2e9; border-left: 4px solid #e67e22; padding: 10px; font-size: 0.85rem; margin-top: 10px; border-radius: 4px; }
-        .badge-info { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -75,7 +74,7 @@
             </div>
         </div>
 
-        <!-- PASO 3: SÍNTOMAS -->
+        <!-- PASO 3: SÍNTOMAS Y MATIZ DE RIGIDEZ -->
         <div class="step" id="step2">
             <h2>Paso 3: Síntomas y Control 24h</h2>
             <div class="form-group">
@@ -83,9 +82,15 @@
                 <input type="number" id="eva" min="0" max="10" value="0" required>
             </div>
             <div class="form-group">
-                <label>Rigidez / Dolor matutino a las 24h (0: Nulo - 10: Máximo):</label>
+                <label>Rigidez / Dolor matutino al levantarse (0: Nulo - 10: Máximo):</label>
                 <input type="number" id="stiffness24h" min="0" max="10" value="0" required>
-                <small style="color: #666;">Valores > 3 indican reactividad post-estímulo.</small>
+            </div>
+            <div class="form-group">
+                <label>¿La rigidez desaparece tras caminar/calentar?</label>
+                <select id="stiffnessWarmsUp">
+                    <option value="true">Sí (Cede al moverse)</option>
+                    <option value="false">No (Mantiene o empeora)</option>
+                </select>
             </div>
             <div class="form-group">
                 <label>¿Puedes caminar sin dolor (AVD)?</label>
@@ -100,18 +105,19 @@
             </div>
         </div>
 
-        <!-- PASO 4: HISTORIAL Y SECUENCIA DE CARGA -->
+        <!-- PASO 4: SECUENCIA DE CARGA PREVIA ESPECÍFICA -->
         <div class="step" id="step3">
-            <h2>Paso 4: Secuencia de Carga Previa</h2>
+            <h2>Paso 4: Tipo de Carga Realizada Ayer</h2>
             <div class="form-group">
-                <label>¿Ayer realizaste sesión de alta carga (ROJO: HSR / Pogos / Isom. Push/Catch)?</label>
-                <select id="yesterdayHighLoad">
-                    <option value="false">No</option>
-                    <option value="true">Sí</option>
+                <label>Categoría de la sesión de ayer:</label>
+                <select id="yesterdayLoadCategory">
+                    <option value="NONE">Descanso / Solo Isométricos (AZUL)</option>
+                    <option value="MODERATE">Fuerza Adaptada / Trote Suave (NARANJA / VERDE)</option>
+                    <option value="HIGH">Alta Carga / Pliometría / HSR / Sprint (ROJO)</option>
                 </select>
             </div>
             <div class="form-group">
-                <label>Días consecutivos en alta carga previa:</label>
+                <label>¿Cuántos días seguidos llevas acumulando Carga Alta (ROJA)?</label>
                 <input type="number" id="consecutiveHighLoadDays" min="0" max="7" value="0">
             </div>
             <div class="btn-group">
@@ -149,7 +155,9 @@
 
     async function submitAssessment() {
         const tendonType = document.getElementById('tendonType').value;
-        const yesterdayHighLoad = document.getElementById('yesterdayHighLoad').value === 'true';
+        const yesterdayLoadCategory = document.getElementById('yesterdayLoadCategory').value;
+        const consecutiveHighLoadDays = parseInt(document.getElementById('consecutiveHighLoadDays').value);
+        const stiffnessWarmsUp = document.getElementById('stiffnessWarmsUp').value === 'true';
 
         const irsTotal = 
             parseInt(document.getElementById('irs_sleep').value) +
@@ -160,27 +168,32 @@
         const formData = {
             eva: parseInt(document.getElementById('eva').value),
             stiffness24h: parseInt(document.getElementById('stiffness24h').value),
+            stiffnessWarmsUp: stiffnessWarmsUp,
             canWalkWithoutPain: document.getElementById('canWalk').value === 'true',
-            consecutiveHighLoadDays: parseInt(document.getElementById('consecutiveHighLoadDays').value),
-            yesterdayHighLoad: yesterdayHighLoad,
+            consecutiveHighLoadDays: consecutiveHighLoadDays,
+            yesterdayLoadCategory: yesterdayLoadCategory,
             irsTotal: irsTotal
         };
 
         let dailyState = 'VERDE';
         let ruleNoteText = '';
 
-        if (formData.eva > 5 || !formData.canWalkWithoutPain) {
+        // EVALUACIÓN DE REGLAS CLÍNICAS
+        if (formData.eva > 5 || !formData.canWalkWithoutPain || (formData.stiffness24h > 3 && !formData.stiffnessWarmsUp)) {
             dailyState = 'ROJO';
-            ruleNoteText = 'Symptom flare / Incapacidad funcional. Exclusivo Isométrico Largo Analgésico (AZUL).';
-        } else if (formData.yesterdayHighLoad && formData.stiffness24h > 3) {
+            ruleNoteText = '⚠️ Rigidez alta persistente (sin warm-up) o dolor en AVD. Protocolo de descarga: Exclusivo Isométricos (AZUL).';
+        } else if (formData.stiffness24h > 3 && formData.stiffnessWarmsUp) {
+            dailyState = 'NARANJA';
+            ruleNoteText = 'ℹ️ Rigidez con fenómeno de calentamiento (cede al moverse). Mantener carga adaptada (NARANJA/VERDE/AZUL). Evitar impactos ROJOS hoy.';
+        } else if (yesterdayLoadCategory === 'HIGH') {
+            dailyState = 'NARANJA';
+            ruleNoteText = 'ℹ️ Ayer realizaste una sesión de Alta Carga (ROJA). Hoy corresponde descarga adaptada/mantenimiento para permitir remodelación de matriz.';
+        } else if (consecutiveHighLoadDays >= 2) {
             dailyState = 'ROJO';
-            ruleNoteText = '⚠️ Molestia post-estímulo >3/10. Regresión a Isométricos Analgésicos Largos (AZUL).';
-        } else if (formData.yesterdayHighLoad) {
+            ruleNoteText = '⚠️ Acumulación de 2+ días en Alta Carga. Freno preventivo de impacto hoy para evitar tendinopatía reactiva.';
+        } else if (formData.eva > 3 || formData.irsTotal < 14) {
             dailyState = 'NARANJA';
-            ruleNoteText = 'ℹ️ Carga ROJA realizada ayer. Hoy corresponde Mantenimiento/Isométricos Largos + Carrera (Regla: No 2 días seguidos de Carga ROJA).';
-        } else if (formData.stiffness24h > 3 || formData.eva > 3 || formData.irsTotal < 14) {
-            dailyState = 'NARANJA';
-            ruleNoteText = 'Rigidez o fatiga sistémica elevada. Adaptación de carga a categoría NARANJA/VERDE/AZUL.';
+            ruleNoteText = 'Molestia moderada o fatiga sistémica acumulada. Carga adaptada hoy.';
         }
 
         saveRecord({
